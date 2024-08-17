@@ -1,0 +1,1 @@
+package shippy_service_consignment
