@@ -4,7 +4,7 @@
 // - protoc             v5.27.3
 // source: consignment.proto
 
-package microservice_go
+package consignment
 
 import (
 	context "context"
