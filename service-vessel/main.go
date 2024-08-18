@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	pb "github.com/SoroushBeigi/microservice-go/service-vessel/proto/vessel"
 	"go-micro.dev/v4"
-	"log"
+
+	pb "github.com/SoroushBeigi/microservice-go/service-vessel/proto/vessel"
 )
 
 type Repository interface {
@@ -17,46 +17,53 @@ type VesselRepository struct {
 	vessels []*pb.Vessel
 }
 
+// FindAvailable - checks a specification against a map of vessels,
+// if capacity and max weight are below a vessels capacity and max weight,
+// then return that vessel.
 func (repo *VesselRepository) FindAvailable(spec *pb.Specification) (*pb.Vessel, error) {
 	for _, vessel := range repo.vessels {
 		if spec.Capacity <= vessel.Capacity && spec.MaxWeight <= vessel.MaxWeight {
 			return vessel, nil
 		}
 	}
-	return nil, errors.New("no suitable vessel found")
+	return nil, errors.New("No vessel found by that spec")
 }
 
-type vesselService struct {
+// Our grpc service handler
+type service struct {
 	repo Repository
 }
 
-func (s *vesselService) FindAvailable(context context.Context, req *pb.Specification, res *pb.Response) error {
+func (s *service) FindAvailable(ctx context.Context, req *pb.Specification, res *pb.Response) error {
+
+	// Find the next available vessel
 	vessel, err := s.repo.FindAvailable(req)
 	if err != nil {
 		return err
 	}
+
+	// Set the vessel as part of the response message type
 	res.Vessel = vessel
 	return nil
 }
 
 func main() {
 	vessels := []*pb.Vessel{
-		&pb.Vessel{Id: "vessel001", Name: "Boaty McBoatface", MaxWeight: 200000, Capacity: 500},
+		&pb.Vessel{Id: "vessel001", Name: "Kane's Salty Secret", MaxWeight: 200000, Capacity: 500},
 	}
 	repo := &VesselRepository{vessels}
 
-	service := micro.NewService(
-		micro.Name("service.vessel"),
+	srv := micro.NewService(
+		micro.Name("go.micro.srv.vessel"),
+		micro.Version("latest"),
 	)
 
-	service.Init()
+	srv.Init()
 
-	if err := pb.RegisterVesselServiceHandler(service.Server(), &vesselService{repo}); err != nil {
-		log.Panic(err)
-	}
+	// Register our implementation with
+	pb.RegisterVesselServiceHandler(srv.Server(), &service{repo})
 
-	if err := service.Run(); err != nil {
-		fmt.Println("PANIC")
-		log.Panic(err)
+	if err := srv.Run(); err != nil {
+		fmt.Println(err)
 	}
 }
