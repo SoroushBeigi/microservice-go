@@ -17,9 +17,6 @@ type VesselRepository struct {
 	vessels []*pb.Vessel
 }
 
-// FindAvailable - checks a specification against a map of vessels,
-// if capacity and max weight are below a vessels capacity and max weight,
-// then return that vessel.
 func (repo *VesselRepository) FindAvailable(spec *pb.Specification) (*pb.Vessel, error) {
 	for _, vessel := range repo.vessels {
 		if spec.Capacity <= vessel.Capacity && spec.MaxWeight <= vessel.MaxWeight {
@@ -61,7 +58,11 @@ func main() {
 	srv.Init()
 
 	// Register our implementation with
-	pb.RegisterVesselServiceHandler(srv.Server(), &service{repo})
+
+	err := pb.RegisterVesselServiceHandler(srv.Server(), &service{repo})
+	if err != nil {
+		return
+	}
 
 	if err := srv.Run(); err != nil {
 		fmt.Println(err)
