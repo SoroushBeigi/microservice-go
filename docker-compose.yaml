@@ -24,15 +24,14 @@ services:
       MICRO_SERVER_ADDRESS: ":50051"
       DB_HOST: "postgres://postgres:1234@datastore:5432/microservice"
 
-  # Database tier
   datastore:
-    image: postgres
+    image: mongo
     container_name: "datastore"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: microservice
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - ./data/db:/data/db
     ports:
-      - "5432:5432"
+      - 27017
+    command: mongod --logpath=/dev/null
